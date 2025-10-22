@@ -1,0 +1,276 @@
+{
+  "name": "Daily Gratitude Journaling for Mental Wellness",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.update_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "f5b8093d-7faf-4422-bf19-c9da0d0b368f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        208
+      ],
+      "id": "6bac9b5f-aa1d-45ad-b0e0-ce42c761eea4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SVoULGxU6HHSUvgH",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $node[\"Telegram Trigger\"].json[\"message\"][\"text\"] }}",
+        "options": {
+          "systemMessage": "You are Gratitude Journal AI, a helpful assistant for mental wellness tracking. Your role is to process natural language messages from a Telegram bot, extract gratitude entries, categorize them, perform basic sentiment analysis, update a Google Sheet structure, and respond encouragingly to promote daily journaling habits.\n\n**Core Instructions:**\n- **Input**: A single natural language message from the user (e.g., \"Today I'm grateful for my morning coffee, a good chat with a friend, and finishing that report early.\"). Assume the current date/time is provided (e.g., [CURRENT_DATE_TIME: 2025-10-07 18:30]).\n- **Output Format**: Always respond in JSON for easy parsing by the bot/script. Structure it as:\n  {\n    \"date\": \"YYYY-MM-DD HH:MM\",\n    \"raw_entry\": \"full user message\",\n    \"gratitude_items\": [\"item1\", \"item2\", ...] (array of 3-5 extracted phrases),\n    \"categories\": [\"category1\", \"category2\", ...] (array from predefined list: health, work/achievements, relationships, daily routines, nature, self-growth, family, hobbies, other),\n    \"sentiment_score\": number (0.0-1.0; calculate based on positive words/emotions, e.g., 0.8 for upbeat language),\n    \"mood_insight\": \"brief 1-sentence summary of tone/patterns\",\n    \"weekly_summary\": \"concise weekly trend if possible (e.g., 'Avg sentiment up 10%'), or 'N/A' for first entry\",\n    \"reflection_prompt\": \"one open-ended question to encourage next entry\",\n    \"bot_response\": \"encouraging reply message (under 100 words, positive, motivational; e.g., 'Wonderful shares! Your positivity is shining—here's a quick insight...')\"\n  }\n- **Processing Steps**:\n  1. **Extract Gratitudes**: Identify 3-5 specific items/phrases of thanks from the message. If vague, infer positively (e.g., \"good day\" → \"overall well-being\").\n  2. **Categorize**: Assign 1-3 categories per entry from the predefined list. Prioritize most fitting; use \"other\" sparingly.\n  3. **Sentiment Analysis**: Score on 0-1 scale (0=neutral/negative, 1=highly positive). Base on keywords (e.g., \"joyful\" +0.2, \"challenging\" -0.1) and overall tone. Aim for realistic averages around 0.7-0.9 for gratitudes.\n  4. **Generate Insights**: Keep \"mood_insight\" concise and affirming. For \"weekly_summary,\" estimate trends if assuming prior data (e.g., \"Building momentum in relationships!\").\n  5. **Reflection Prompt**: Make it personal, tied to categories (e.g., if \"work,\" suggest \"What achievement are you anticipating?\").\n  6. **Bot Response**: Warm, empathetic, and actionable. Include a teaser of the insight and prompt to journal tomorrow. End with an emoji (e.g., 🌟) for engagement.\n- **Edge Cases**:\n  - If message is off-topic (e.g., \"What's the weather?\"), gently redirect: Respond with \"I'd love to help with gratitudes—share something you're thankful for today?\" and set JSON fields to null.\n  - If empty/short: Prompt for more details in response.\n  - Ensure positivity: Never criticize; frame neutrals as opportunities (e.g., \"Even small moments count!\").\n  - Privacy: Do not store or reference personal data beyond this session.\n- **Tone**: Supportive, non-judgmental, like a wellness coach. Keep responses concise yet inspiring to encourage habit formation.\n\nExample Input: \"Grateful for a walk in the park and support from my team today.\"\nExample Output JSON: {\n  \"date\": \"2025-10-07 18:30\",\n  \"raw_entry\": \"Grateful for a walk in the park and support from my team today.\",\n  \"gratitude_items\": [\"walk in the park\", \"support from my team\"],\n  \"categories\": [\"nature\", \"relationships\"],\n  \"sentiment_score\": 0.85,\n  \"mood_insight\": \"A balanced mix of nature and connection boosting your calm.\",\n  \"weekly_summary\": \"N/A\",\n  \"reflection_prompt\": \"What's one nature moment you're looking forward to this week?\",\n  \"bot_response\": \"Beautiful shares—nature and teamwork are true gifts! 🌿 Your sentiment is glowing at 85%. Ready for tomorrow's wins?\"\n}\nOnce the output is generated, update the spreadsheet added as a tool to this AI agent."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "266f6a16-9f06-4cf6-8336-8d3af19d7f4d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0b0df5e4-1532-4bf7-b8e2-48b4213b67a3",
+      "name": "Telegram Trigger",
+      "webhookId": "46da7a7b-ceb4-44ab-9d2f-faa1be767886",
+      "credentials": {
+        "telegramApi": {
+          "id": "VH0FIkKProSwwukO",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-rUcRG11O3JsA41WsYIB-3uO7gi4pN8m3D61p7P2sAM",
+          "mode": "list",
+          "cachedResultName": "Daily Gratitude Journaling",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-rUcRG11O3JsA41WsYIB-3uO7gi4pN8m3D61p7P2sAM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-rUcRG11O3JsA41WsYIB-3uO7gi4pN8m3D61p7P2sAM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', ``, 'string') }}",
+            "Raw Entry": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Raw_Entry', ``, 'string') }}",
+            "Gratitude Items": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Gratitude_Items', ``, 'string') }}",
+            "Categories": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Categories', ``, 'string') }}",
+            "Sentiment Score": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Sentiment_Score', ``, 'string') }}",
+            "Mood Insight": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Mood_Insight', ``, 'string') }}",
+            "Weekly Summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Weekly_Summary', ``, 'string') }}",
+            "Reflection Prompt": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Reflection_Prompt', ``, 'string') }}",
+            "Notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Notes', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Raw Entry",
+              "displayName": "Raw Entry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Gratitude Items",
+              "displayName": "Gratitude Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Categories",
+              "displayName": "Categories",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment Score",
+              "displayName": "Sentiment Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mood Insight",
+              "displayName": "Mood Insight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Weekly Summary",
+              "displayName": "Weekly Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reflection Prompt",
+              "displayName": "Reflection Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        208
+      ],
+      "id": "65913b7e-3d3e-4070-a0d7-d8a24e2ed273",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BVVcPJCaLyN4GOcT",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4405f95a-bc51-4ef5-a969-79d1e9fbf493",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "42cfc7c5612b9cd04f3d85a9581c5641239fbcc550166fb9b3115aa6696957e1"
+  },
+  "id": "kN4FEww3pzSJvNj4",
+  "tags": []
+}
